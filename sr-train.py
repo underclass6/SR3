@@ -73,8 +73,10 @@ if __name__ == "__main__":
     logger.info('Initial Model Finished')
 
     # Train
-    current_step = diffusion.begin_step
-    current_epoch = diffusion.begin_epoch
+    # current_step = diffusion.begin_step
+    current_step = 0
+    # current_epoch = diffusion.begin_epoch
+    current_epoch = 0
     n_iter = opt['train']['n_iter']
 
     if opt['path']['resume_state']:
@@ -86,8 +88,8 @@ if __name__ == "__main__":
 
     executor = futures.ThreadPoolExecutor(max_workers=2)
 
-    from utils.rewards import jpeg_compressibility
-    reward_fn = jpeg_compressibility()
+    from utils.rewards import jpeg_compressibility, aesthetic_score
+    reward_fn = aesthetic_score()
 
     if opt['phase'] == 'train':
         optimizer_cls = torch.optim.AdamW
@@ -101,6 +103,7 @@ if __name__ == "__main__":
         )
 
         while current_step < n_iter:
+            logger.info("training")
             current_epoch += 1
             for _, train_data in enumerate(train_loader):
                 current_step += 1
@@ -117,9 +120,9 @@ if __name__ == "__main__":
                     images = latents[-1]  # the final images
                     latents = torch.stack(
                         latents, dim=1
-                    )  # (batch_size, num_steps + 1, channels, width, height)
-                    log_probs = torch.stack(log_probs, dim=1)  # (batch_size, num_steps)
-                    timesteps = torch.stack(timesteps, dim=1)  # (batch_size, num_steps)
+                    ).to(diffusion.device)  # (batch_size, num_steps + 1, channels, width, height)
+                    log_probs = torch.stack(log_probs, dim=1).to(diffusion.device)  # (batch_size, num_steps)
+                    timesteps = torch.stack(timesteps, dim=1).to(diffusion.device)  # (batch_size, num_steps)
 
                     # compute rewards asynchronously
                     rewards = executor.submit(reward_fn, images, None, None)
@@ -303,4 +306,3 @@ if __name__ == "__main__":
                                     np.concatenate((fake_img, sr_img, hr_img), axis=1)
                                 )
 
-            break

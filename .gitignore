@@ -132,3 +132,5 @@ dmypy.json
 *.lmdb
 
 logs/
+pre-models/
+downloads/

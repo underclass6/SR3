@@ -218,6 +218,7 @@ class GaussianDiffusion(nn.Module):
         else:
             return ret_img[-1]
 
+    @torch.no_grad()
     def p_sample_loop_with_logprob(self, x_in, continous=True):
         device = self.betas.device
         sample_inter = (1 | (self.num_timesteps // 10))
